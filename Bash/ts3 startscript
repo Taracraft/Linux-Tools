@@ -1,0 +1,39 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: 		teamspeak3
+# Required-Start: 	$local_fs $network
+# Required-Stop:	$local_fs $network
+# Default-Start: 	2 3 4 5
+# Default-Stop: 	0 1 6
+# Description: 		Teamspeak 3 Server
+### END INIT INFO
+ 
+
+# INIT Script by www.SysADMINsLife.com
+######################################
+# Customize values for your needs: "User"; "DIR"
+
+USER="ts3"
+DIR="/home/ts3/ts3_server"
+ 
+###### Teamspeak 3 server start/stop script ######
+ 
+case "$1" in
+start)
+su $USER -c "${DIR}/ts3server_startscript.sh start inifile=ts3server.ini"
+;;
+stop)
+su $USER -c "${DIR}/ts3server_startscript.sh stop  inifile=ts3server.ini"
+;;
+restart)
+su $USER -c "${DIR}/ts3server_startscript.sh restart  inifile=ts3server.ini"
+;;
+status)
+su $USER -c "${DIR}/ts3server_startscript.sh status  inifile=ts3server.ini"
+;;
+*)
+echo "Usage: {start|stop|restart|status}" >&2
+exit 1
+;;
+esac
+exit 0
