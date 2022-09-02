@@ -3,12 +3,29 @@
 ##############################################################################
 joomlav=4-0-0 		# Die - Zeichen Müssten so bleiben , oder . Funkttionieren nicht!
 phpv=8.0			# Das . Zeichen Muss so bleiben - oder , Funkttioniert nicht!
+farbe=\e[01;32;32m \e[0m
 #[Empfohlene PHP Version (7.5) und (8.x) Version 5.x Wird NICHT Empfohlen [Outdatet!]]
 
 ##############################################################################
+#OS Herausfinden#
+function os_type {
+case `uname` in
+  Linux )
+     LINUX=1
+     which yum && { echo "CentOS"; return; }
+     which zypper && { echo "openSUSE"; return; }
+     which apt-get && { echo "Debian"; return; }
+	 which snap && { echo"ubunto"; return;})
+     ;;
+  * )
+     # Handle AmigaOS, CPM, and modified cable modems.
+     ;;
+esac
+}
 #//Update System//#
 echo -e "\e[01;32;32m System update ueberpruefung...\e[0m"
 sleep 1
+if 
 apt-get update
 apt-get -y upgrade
 apt-get -y autoremove
@@ -29,7 +46,7 @@ sleep 2
 fi
 
 if [ ! -f "$mysqls" ]; then
-apt-get -y install mysql-server mysql-client
+apt-get -y install mariadb-server mariadb-client
 else
 echo -e "\e[01;32;32m MySQL Server ist bereits installiert!\e[0m"
 sleep 2
@@ -38,7 +55,7 @@ fi
 echo -e "\e[01;32;32m Notwendige PHP Packete werden installiert\e[0m"
 sleep 1
 if [ ! -f "$phpi" ]; then
-apt-get -y install php$phpv php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip php-bcmath php-mysql php-json libapache2-mod-php$phpv
+apt-get -y install apt install php8.0 php8.0-cli php8.0-common php8.0-curl php8.0-gd php8.0-intl php8.0-mbstring php8.0-mysql php8.0-opcache php8.0-readline php8.0-xml php8.0-xsl php8.0-zip php8.0-bz2 libapache2-mod-php8.0 -y
 else
 echo -e "\e[01;32;32m PHP, PHP-Erweiterungen sind bereits installiert!\e[0m"
 sleep 2
