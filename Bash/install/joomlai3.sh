@@ -1,4 +1,3 @@
-## wget --user=msebastian100 --password="Sawsaw+#19" rp.plertanix.de/joomlai3.sh && chmod 777 joomlai3.sh
 #!/bin/bash
 
 # Joomla Version
@@ -7,14 +6,14 @@ joomlad_dir="/tmp"
 # PHP
 php_packages="php php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip php-bcmath php-mysql php-json libapache2-mod-php"
 
-# Überprüfen Sie, ob das Skript als Root ausgeführt wird
+# ÃœberprÃ¼fen Sie, ob das Skript als Root ausgefÃ¼hrt wird
 if [ "$(whoami)" != "root" ]; then
-    echo "Dieses Skript muss als Root ausgeführt werden."
+    echo "Dieses Skript muss als Root ausgefÃ¼hrt werden."
     exit 1
 fi
 
 # System aktualisieren
-echo -e "\e[01;32;32m System-Updates werden überprüft...\e[0m"
+echo -e "\e[01;32;32m System-Updates werden Ã¼berprÃ¼ft...\e[0m"
 sleep 1
 apt-get update
 apt-get -y upgrade
@@ -32,8 +31,8 @@ sudo apt-get install -y mc nano apache2 mysql-server mysql-client
 echo "PHP wird installiert"
 sudo apt-get install -y $php_packages
 
-# Überprüfe, ob die Pakete installiert wurden
-echo "Überprüfe, ob die Pakete installiert wurden"
+# ÃœberprÃ¼fe, ob die Pakete installiert wurden
+echo "ÃœberprÃ¼fe, ob die Pakete installiert wurden"
 for package in $php_packages; do
     if dpkg -s "$package" >/dev/null 2>&1; then
         echo "$package ist installiert"
@@ -51,8 +50,8 @@ PHP_MOD_NAME="php$PHP_VERSION"
 sudo a2dismod $PHP_MOD_NAME
 sudo a2enmod $PHP_MOD_NAME
 
-# Überprüfe, ob PHP und die Erweiterungen installiert wurden
-echo -e "\e[01;32;32mÜberprüfe, ob PHP und die Erweiterungen installiert wurden...\e[0m"
+# ÃœberprÃ¼fe, ob PHP und die Erweiterungen installiert wurden
+echo -e "\e[01;32;32mÃœberprÃ¼fe, ob PHP und die Erweiterungen installiert wurden...\e[0m"
 php -v
 php -m
 
@@ -85,10 +84,10 @@ fi
 
 echo "Datenbank erfolgreich erstellt!"
 
-echo "Gib den Namen des Benutzers für die Datenbank ein:"
+echo "Gib den Namen des Benutzers fÃ¼r die Datenbank ein:"
 read username
 
-echo "Gib das Passwort für den Datenbankbenutzer ein:"
+echo "Gib das Passwort fÃ¼r den Datenbankbenutzer ein:"
 read -s userpass
 
 echo "Erstelle neuen Benutzer..."
@@ -101,7 +100,7 @@ fi
 
 echo "Benutzer erfolgreich erstellt!"
 
-echo "Gib alle Rechte für die Datenbank $dbname an den Benutzer $username."
+echo "Gib alle Rechte fÃ¼r die Datenbank $dbname an den Benutzer $username."
 mysql -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$username'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 mysql -e "ALTER USER '$username'@'localhost' IDENTIFIED WITH mysql_native_password BY '$userpass';"
