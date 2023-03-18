@@ -1,106 +1,139 @@
 #!/bin/bash
-##Ich uebernehme Keine Haftung für Schaeden am System oder An der Hardware.
-phpi=`which php php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip php-bcmath php-mysql php-json`
-apache=`which apache2`
-mysqls=`which mysql-server`
-notwenp=`which sudo mc nano`
-#//Update System//#
-echo -e "\e[01;32;32m System update ueberpruefung...\e[0m"
+
+# WordpressVersion
+wordpress_dir="/tmp"
+# PHP
+php_packages="php php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip php-bcmath php-mysql php-json libapache2-mod-php"
+
+# Überprüfen Sie, ob das Skript als Root ausgeführt wird
+if [ "$(whoami)" != "root" ]; then
+    echo "Dieses Skript muss als Root ausgeführt werden."
+    exit 1
+fi
+
+# System aktualisieren
+echo -e "\e[01;32;32m System-Updates werden überprüft...\e[0m"
 sleep 1
 apt-get update
-
 apt-get -y upgrade
 apt-get -y autoremove
 apt-get -y autoclean
-sleep 2
-echo "Notwendige Programme Werden installiert"
-if [ ! -f "$notwenp" ]; then
-apt-get -y install sudo mc nano
-else		
-echo -e "\e[01;32;32m sudo mc nano ist bereits installiert!\e[0m"
-sleep 2
-fi
-
-if [ ! -f "$apache" ]; then
-apt-get -y install apache2
-else 
-echo -e "\e[01;32;32m Apache2 ist bereits installiert!\e[0m"
-sleep 2
-fi
-
-if [ ! -f "$mysqls" ]; then
-apt-get -y install mysql-server
-else
-echo -e "\e[01;32;32m MySQL Server ist bereits installiert!\e[0m"
-sleep 2
-fi
-
-echo -e "\e[01;32;32m Notwendige PHP Packete werden installiert\e[0m"
 sleep 1
-if [ ! -f "$phpi" ]; then
-apt-get -y install php php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip php-bcmath php-mysql php-json
-else
-echo -e "\e[01;32;32m PHP, PHP-Erweiterungen sind bereits installiert!\e[0m"
-sleep 2
-fi
+
+# Erforderliche Pakete installieren
+echo -e "\e[01;32;32mErforderliche Pakete werden installiert...\e[0m"
+sleep 1
+sudo apt-get install -y mc nano apache2 mysql-server mysql-client
+
+
+# Installiere PHP und erforderliche Erweiterungen
+echo "PHP wird installiert"
+sudo apt-get install -y $php_packages
+
+# Überprüfe, ob die Pakete installiert wurden
+echo "Überprüfe, ob die Pakete installiert wurden"
+for package in $php_packages; do
+    if dpkg -s "$package" >/dev/null 2>&1; then
+        echo "$package ist installiert"
+    else
+        echo "$package ist NICHT installiert"
+    fi
+done
+# Setze die PHP-Umgebungsvariable
+PHP_VERSION=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;")
+echo "export PHP_VERSION=$PHP_VERSION" >> ~/.bashrc
+source ~/.bashrc
+
+# Aktiviere die Apache-Module
+PHP_MOD_NAME="php$PHP_VERSION"
+sudo a2dismod $PHP_MOD_NAME
+sudo a2enmod $PHP_MOD_NAME
+
+# Überprüfe, ob PHP und die Erweiterungen installiert wurden
+echo -e "\e[01;32;32mÜberprüfe, ob PHP und die Erweiterungen installiert wurden...\e[0m"
+php -v
+php -m
+
 systemctl restart apache2
 sleep 1
-echo -e "\e[01;32;32m Datenbank erstellen\e[0m"
 
- if [ -f /root/.my.cnf ]; then
-        echo "Datei Exestiert";	
- else
-	echo "Bitte gebe das root MySQL password ein!";
-        read -p dbuser;
-	echo "Hinweis: Das Password wird unsichtbar eingegeben!"
-	read -s passwd;
-        echo -e "[client]" >> /root/.my.cnf;
-	echo -e "user=$dbuser\npassword=$passwd" >> /root/.my.cnf;
-        exit;
- fi
+##Datenbank erstellen
+echo -e "\e[01;32;32mDatenbank erstellen\e[0m"
+sleep 1
+echo "Datenbank erstellen"
+
+if [ -f /root/.my.cnf ]; then
+    echo "Datei existiert."
+else
+    echo "Bitte gib das root MySQL-Passwort ein:"
+    read -s dbpass
+    echo -e "[client]\nuser=root\npassword=$dbpass" > /root/.my.cnf
+fi
+
+echo "Gib den Namen der Datenbank ein:"
+read dbname
+
+echo "Erstelle neue MySQL-Datenbank..."
+mysql -e "CREATE DATABASE $dbname /*!40100 DEFAULT CHARACTER SET utf8 */;"
+
+if [ $? -ne 0 ]; then
+    echo "Fehler beim Erstellen der Datenbank."
+    exit 1
+fi
+
+echo "Datenbank erfolgreich erstellt!"
+
+echo "Gib den Namen des Benutzers für die Datenbank ein:"
+read username
+
+echo "Gib das Passwort für den Datenbankbenutzer ein:"
+read -s userpass
+
+echo "Erstelle neuen Benutzer..."
+mysql -e "CREATE USER '$username'@'localhost' IDENTIFIED WITH mysql_native_password BY '$userpass';"
+
+if [ $? -ne 0 ]; then
+    echo "Fehler beim Erstellen des Benutzers."
+    exit 1
+fi
+
+echo "Benutzer erfolgreich erstellt!"
+
+echo "Gib alle Rechte für die Datenbank $dbname an den Benutzer $username."
+mysql -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$username'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+mysql -e "ALTER USER '$username'@'localhost' IDENTIFIED WITH mysql_native_password BY '$userpass';"
+
+echo "Alle Schritte abgeschlossen!"
+
+# Lade Wordpressherunter
+echo "Wordpress Download"
+if [ ! -f "$wordpress_dir/latest-de_DE.tar.gz" ]
+then
+    wget -P "$wordpress_dir" "https://de.wordpress.org/latest-de_DE.tar.gz"
+fi
+
+# Entpacke Wordpressund setze die Berechtigungen
+echo "Wordpressentpacken und Berechtigungen setzen"
+rm /var/www/html/index.html
+tar -zxvf "$wordpress_dir/latest-de_DE.tar.gz" -C /var/www/html/
+mv /var/www/html/wordpress/* /var/www/html/
+rmdir /var/www/html/wordpress/
+chown -R www-data:www-data /var/www/html/
+
+echo -e "\e[01;32;32m Wordpress Installation abgeschlossen\e[0m"
+sleep 10
 
 
- echo "Datenbank name eingeben!"
- read dbname
-    
- echo "Erstelle neue MySQL Datenbank..."
- mysql -e "CREATE DATABASE ${dbname} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
- echo "Datenbank erfolgreich erstellt!"
- 
- echo "Datenbank Benutzer eingeben!"
- read username
- 
- echo "Password fuer Datenbank Benutzer Eingeben!"
- echo "Hinweis: Das Password wird unsichtbar eingegeben!"
- read -s userpass
-    
- echo "Erstelle neuen Benutzer..." 
- mysql -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpass}';"
- echo "Benutzer erfolgreich erzeugt!"
+# Schreibe die Ausgabe in die root-Shell und auf der Konsole
+echo "Username & Password & Datenbanknamen Bitte Aufschreiben" | sudo tee /root/install.log > /dev/null
+echo "Datenbank username: $username" | sudo tee -a /root/install.log > /dev/null
+echo "Datenbank Passwort: $userpass" | sudo tee -a /root/install.log > /dev/null
+echo "Datenbank Name: $dbname" | sudo tee -a /root/install.log > /dev/null
 
- echo "Gebe alle Rechte von Datenbank: ${dbname} zu Benutzer: ${username}!"
- mysql -e "GRANT ALL PRIVILEGES ON ${dbname}.* TO '${username}'@'localhost';"
- mysql -e "ALTER USER '$username'@'localhost' IDENTIFIED WITH mysql_native_password BY '$userpass';"
- mysql -e "FLUSH PRIVILEGES;"
- 
- echo -e "\e[01;32;32m wordpress Download\e[0m"
- 
- if [ -f "/var/www/html/index.html" ]
- then
- rm /var/www/html/index.html
- else
- wget https://de.wordpress.org/latest-de_DE.tar.gz
- cp  latest-de_DE.tar.gz /var/www/html/
- tar -xvzf /var/www/html/latest-de_DE.tar.gz -C /var/www/html
- cp -r /var/www/html/wordpress/* /var/www/html/
- rm -r /var/www/html/wordpress
- chown www-data:www-data -R /var/www/html
- chmod 777 -R /var/www/html 
- sleep 1
- echo
- echo "Username & Password & Datenbanknamen Bitte Aufschreiben"
- echo "Datenbank username: $username"
- echo "Datenbank Passwort: $userpass"
- echo "Datenbank Name: $dbname"
- sleep 60
- fi
+echo "Username & Password & Datenbanknamen Bitte Aufschreiben"
+echo "Datenbank username: $username"
+echo "Datenbank Passwort: $userpass"
+echo "Datenbank Name: $dbname"
+sleep 10
+rm "/root/wordpressi.sh"
