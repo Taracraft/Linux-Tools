@@ -4,6 +4,9 @@
 joomlav=3-10-11 	# Die - Zeichen Müssten so bleiben , oder . Funkttionieren nicht!
 phpv=8.0			#Das . Zeichen Muss so bleiben - oder , Funkttioniert nicht!
 #[Empfohlene PHP Version (7.5) und (8.x) Version 5.x Wird NICHT Empfohlen [Outdatet!]]
+notwenp=`which sudo, mc, nano`
+apache=`which apache2`
+mysqls=`which mysql-server mysql-client`
 
 ##############################################################################
 #//Update System//#
@@ -29,7 +32,7 @@ sleep 2
 fi
 
 if [ ! -f "$mysqls" ]; then
-apt-get -y install mysql-server
+apt-get -y install mysql-server mysql-client
 else
 echo -e "\e[01;32;32m MySQL Server ist bereits installiert!\e[0m"
 sleep 2
